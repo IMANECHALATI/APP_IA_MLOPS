@@ -1,0 +1,10 @@
+base:
+  random_state: 42
+
+data:
+  raw_path: "data/irrigation_prediction.csv"
+  test_size: 0.2
+
+train:
+  n_estimators: 100
+  max_depth: 10
