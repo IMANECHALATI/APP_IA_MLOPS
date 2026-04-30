@@ -24,7 +24,7 @@ def load_config():
             continue
     
     if df is None:
-        st.error("❌ Fichier CSV introuvable dans `data/` ou `../data/`")
+        st.error(" Fichier CSV introuvable dans `data/` ou `../data/`")
         st.stop()
 
     # Nettoyage : retirer les colonnes cibles
@@ -88,10 +88,10 @@ def fetch_weather(city_name):
         }
     
     except requests.exceptions.Timeout:
-        st.error("⏱️ Timeout : l'API météo ne répond pas.")
+        st.error(" Timeout : l'API météo ne répond pas.")
         return None
     except Exception as e:
-        st.error(f"❌ Erreur lors de la récupération météo : {str(e)}")
+        st.error(f" Erreur lors de la récupération météo : {str(e)}")
         return None
 
 
@@ -105,7 +105,7 @@ def detect_weather_column(col_name, keyword):
 # ==================== INTERFACE PRINCIPALE ====================
 
 st.title("🌱 Système d'Aide à la Décision : Irrigation Intelligente")
-st.caption(f"📅 Date du jour : **{datetime.now().strftime('%A %d %B %Y')}**")
+st.caption(f" Date du jour : **{datetime.now().strftime('%A %d %B %Y')}**")
 
 # Chargement configuration
 categories, num_stats, cat_cols, num_cols = load_config()
@@ -115,10 +115,10 @@ input_data = {}
 
 # ==================== SECTION 1 : MÉTÉO EN TEMPS RÉEL ====================
 
-st.header("🌤️ Données Météorologiques")
+st.header(" Données Météorologiques")
 
 use_live_weather = st.toggle(
-    "🔴 Activer la météo en temps réel", 
+    " Activer la météo en temps réel", 
     value=False,
     help="Récupère automatiquement température et humidité depuis Open-Meteo"
 )
@@ -130,31 +130,31 @@ if use_live_weather:
     
     with col_city:
         city_input = st.text_input(
-            "🏙️ Entrez votre ville", 
+            " Entrez votre ville", 
             placeholder="Ex: Marrakech, Paris, Casablanca...",
             key="city_input"
         )
     
     with col_btn:
         st.write("")  # Alignement visuel
-        fetch_btn = st.button("🔄 Récupérer", use_container_width=True)
+        fetch_btn = st.button(" Récupérer", use_container_width=True)
     
     # Récupération météo
     if fetch_btn and city_input:
-        with st.spinner(f"🌍 Récupération météo pour {city_input}..."):
+        with st.spinner(f" Récupération météo pour {city_input}..."):
             weather_data = fetch_weather(city_input)
     
     # Affichage météo récupérée
     if weather_data:
-        st.success(f"✅ Météo récupérée pour **{weather_data['city']}** le {weather_data['date']}")
+        st.success(f" Météo récupérée pour **{weather_data['city']}** le {weather_data['date']}")
         
         col_temp, col_hum = st.columns(2)
         with col_temp:
-            st.metric("🌡️ Température", f"{weather_data['temperature']} °C")
+            st.metric(" Température", f"{weather_data['temperature']} °C")
         with col_hum:
-            st.metric("💧 Humidité Relative", f"{weather_data['humidity']} %")
+            st.metric(" Humidité Relative", f"{weather_data['humidity']} %")
     elif fetch_btn:
-        st.warning("⚠️ Ville introuvable. Vérifiez l'orthographe ou désactivez le mode temps réel.")
+        st.warning(" Ville introuvable. Vérifiez l'orthographe ou désactivez le mode temps réel.")
 
 st.divider()
 
@@ -163,17 +163,17 @@ st.divider()
 col_left, col_right = st.columns([1, 1])
 
 with col_left:
-    st.subheader("📋 Informations sur la Culture")
+    st.subheader(" Informations sur la Culture")
     for col in cat_cols:
         label = col.replace('_', ' ').title()
         input_data[col] = st.selectbox(
-            f"🌾 {label}", 
+            f" {label}", 
             categories[col],
             key=f"cat_{col}"
         )
 
 with col_right:
-    st.subheader("🌍 Conditions Environnementales")
+    st.subheader(" Conditions Environnementales")
     
     # Gestion intelligente : météo live remplace temp/humid
     for col in num_cols:
@@ -190,14 +190,14 @@ with col_right:
             if use_live_weather and weather_data:
                 if is_temp:
                     input_data[col] = weather_data["temperature"]
-                    st.metric(f"🌡️ {col.replace('_', ' ').title()}", f"{weather_data['temperature']} °C", delta="Temps réel")
+                    st.metric(f" {col.replace('_', ' ').title()}", f"{weather_data['temperature']} °C", delta="Temps réel")
                 elif is_humid:
                     input_data[col] = weather_data["humidity"]
-                    st.metric(f"💧 {col.replace('_', ' ').title()}", f"{weather_data['humidity']} %", delta="Temps réel")
+                    st.metric(f" {col.replace('_', ' ').title()}", f"{weather_data['humidity']} %", delta="Temps réel")
                 else:
                     # Autres données météo (pluie, vent...) restent manuelles
                     input_data[col] = st.slider(
-                        f"🌦️ {col.replace('_', ' ').title()}", 
+                        f" {col.replace('_', ' ').title()}", 
                         num_stats[col]["min"], 
                         num_stats[col]["max"], 
                         num_stats[col]["mean"],
@@ -206,7 +206,7 @@ with col_right:
             else:
                 # Mode manuel pour toutes les données météo
                 input_data[col] = st.slider(
-                    f"🌦️ {col.replace('_', ' ').title()}", 
+                    f" {col.replace('_', ' ').title()}", 
                     num_stats[col]["min"], 
                     num_stats[col]["max"], 
                     num_stats[col]["mean"],
@@ -217,7 +217,7 @@ st.divider()
 
 # ==================== SECTION 3 : PARAMÈTRES AVANCÉS (OPTIONNELS) ====================
 
-with st.expander("🔬 Paramètres Avancés du Sol (pH, Carbone, Azote, etc.)", expanded=False):
+with st.expander(" Paramètres Avancés du Sol (pH, Carbone, Azote, etc.)", expanded=False):
     st.caption("Ces paramètres affinent la précision mais peuvent rester aux valeurs par défaut.")
     
     advanced_cols = st.columns(2)
@@ -227,7 +227,7 @@ with st.expander("🔬 Paramètres Avancés du Sol (pH, Carbone, Azote, etc.)", 
         if col not in input_data:  # Uniquement les colonnes non déjà remplies
             with advanced_cols[col_idx % 2]:
                 input_data[col] = st.slider(
-                    f"⚗️ {col.replace('_', ' ').title()}", 
+                    f" {col.replace('_', ' ').title()}", 
                     num_stats[col]["min"], 
                     num_stats[col]["max"], 
                     num_stats[col]["mean"],
@@ -241,25 +241,25 @@ st.divider()
 
 # Dictionnaire pour convertir les prédictions en labels lisibles
 IRRIGATION_LABELS = {
-    0: "❌ Pas d'irrigation nécessaire",
-    1: "💧 Irrigation modérée recommandée",
-    2: "💦 Irrigation forte nécessaire",
-    "0": "❌ Pas d'irrigation nécessaire",
-    "1": "💧 Irrigation modérée recommandée", 
-    "2": "💦 Irrigation forte nécessaire",
-    "Low": "❌ Irrigation faible",
-    "Medium": "💧 Irrigation modérée",
-    "High": "💦 Irrigation forte",
-    "No": "❌ Pas d'irrigation",
-    "Yes": "💦 Irrigation nécessaire"
+    0: " Pas d'irrigation nécessaire",
+    1: " Irrigation modérée recommandée",
+    2: " Irrigation forte nécessaire",
+    "0": " Pas d'irrigation nécessaire",
+    "1": " Irrigation modérée recommandée", 
+    "2": " Irrigation forte nécessaire",
+    "Low": " Irrigation faible",
+    "Medium": " Irrigation modérée",
+    "High": " Irrigation forte",
+    "No": " Pas d'irrigation",
+    "Yes": " Irrigation nécessaire"
 }
 
 # ==================== SECTION 4 : PRÉDICTION ====================
 
-st.subheader("🚀 Lancer l'Analyse")
+st.subheader(" Lancer l'Analyse")
 
-if st.button("💧 PRÉDIRE LE BESOIN EN IRRIGATION", type="primary", use_container_width=True):
-    with st.spinner("🧠 Le modèle analyse vos données..."):
+if st.button(" PRÉDIRE LE BESOIN EN IRRIGATION", type="primary", use_container_width=True):
+    with st.spinner(" Le modèle analyse vos données..."):
         try:
             # Appel API FastAPI
             response = requests.post(API_URL, json=input_data, timeout=10)
@@ -284,34 +284,34 @@ if st.button("💧 PRÉDIRE LE BESOIN EN IRRIGATION", type="primary", use_contai
                 # Style conditionnel selon le résultat
                 if raw_result in [0, "0", "No", "Low"]:
                     st.success(f"### {final_result}")
-                    st.info("💡 Le sol a suffisamment d'humidité. Économisez l'eau !")
+                    st.info(" Le sol a suffisamment d'humidité. Économisez l'eau !")
                 elif raw_result in [1, "1", "Medium"]:
                     st.warning(f"### {final_result}")
-                    st.info("💡 Une irrigation légère est conseillée.")
+                    st.info(" Une irrigation légère est conseillée.")
                 else:  # High, 2, "2", Yes
                     st.error(f"### {final_result}")
-                    st.info("💡 Irrigation urgente recommandée pour optimiser la culture.")
+                    st.info(" Irrigation urgente recommandée pour optimiser la culture.")
                 
                 # Affichage des données envoyées (debug)
-                with st.expander("📊 Voir les données envoyées au modèle"):
+                with st.expander(" Voir les données envoyées au modèle"):
                     st.json(input_data)
                     st.caption(f"Prédiction brute du modèle : **{raw_result}**")
             
             else:
-                st.error(f"❌ Erreur API (Code {response.status_code}). Vérifiez votre backend FastAPI.")
+                st.error(f" Erreur API (Code {response.status_code}). Vérifiez votre backend FastAPI.")
                 st.code(response.text)
         
         except requests.exceptions.ConnectionError:
-            st.error("🔌 **Impossible de se connecter à l'API FastAPI.**")
-            st.info("💡 Assurez-vous que FastAPI tourne : `uvicorn src.api:app --reload`")
+            st.error(" **Impossible de se connecter à l'API FastAPI.**")
+            st.info(" Assurez-vous que FastAPI tourne : `uvicorn src.api:app --reload`")
         
         except requests.exceptions.Timeout:
-            st.error("⏱️ L'API a mis trop de temps à répondre (timeout).")
+            st.error(" L'API a mis trop de temps à répondre (timeout).")
         
         except Exception as e:
-            st.error(f"❌ Erreur inattendue : {str(e)}")
+            st.error(f" Erreur inattendue : {str(e)}")
 
 # ==================== FOOTER ====================
 
 st.divider()
-st.caption("🌱 Système MLOps d'Irrigation Intelligente | Développé avec Streamlit + FastAPI + ML")
+st.caption(" Système MLOps d'Irrigation Intelligente | Développé avec Streamlit + FastAPI + ML")

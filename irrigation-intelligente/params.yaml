@@ -1,10 +1,33 @@
 base:
   random_state: 42
+  project_name: "irrigation-intelligente"
+  version: "1.0.0"
 
 data:
   raw_path: "data/irrigation_prediction.csv"
+  train_X_path: "data/train_X.csv"
+  train_y_path: "data/train_y.csv"
+  test_X_path: "data/test_X.csv"
+  test_y_path: "data/test_y.csv"
   test_size: 0.2
 
 train:
   n_estimators: 100
   max_depth: 10
+  # Paramètres à tuner plus tard
+  min_samples_split: 2
+  min_samples_leaf: 1
+
+evaluate:
+  accuracy_threshold: 0.75   # Seuil minimum pour valider le modèle
+  metrics_path: "metrics/scores.json"
+
+mlflow:
+  experiment_name: "irrigation-intelligente"
+  tracking_uri: "mlruns"     # Local. Remplacer par URL serveur MLflow si distant
+  model_registry_name: "IrrigationModel"
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  version: "1.0.0"
