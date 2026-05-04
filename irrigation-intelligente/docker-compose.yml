@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+
+  # ── API FastAPI ──────────────────────────────
+  api:
+    build: .
+    container_name: irrigation-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./metrics:/app/metrics
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── MLflow UI ────────────────────────────────
+  mlflow:
+    image: python:3.10-slim
+    container_name: irrigation-mlflow
+    working_dir: /mlflow
+    volumes:
+      - ./mlruns:/mlflow/mlruns
+    ports:
+      - "5000:5000"
+    command: >
+      bash -c "pip install mlflow --quiet &&
+               mlflow ui --host 0.0.0.0 --port 5000"
+    restart: unless-stopped

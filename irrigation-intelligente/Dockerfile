@@ -1,20 +1,26 @@
-# 1. Utiliser une image Python légère comme base
-FROM python:3.9-slim
+FROM python:3.10-slim
 
-# 2. Définir le dossier de travail dans le conteneur
 WORKDIR /app
 
-# 3. Copier le fichier de dépendances en premier (optimisation du cache)
+# Dépendances système nécessaires
+RUN apt-get update && apt-get install -y \
+    curl \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# 4. Installer les dépendances
-RUN pip install --no-cache-dir -r requirements.txt
+COPY src/api.py ./src/api.py
+COPY models/    ./models/
+COPY params.yaml .
 
-# 5. Copier tout le reste du projet
-COPY . .
+RUN mkdir -p logs metrics
 
-# 6. Exposer le port que Flask va utiliser
-EXPOSE 5000
+EXPOSE 8000
 
-# 7. Commande pour lancer l'API au démarrage du conteneur
-CMD ["python", "src/api.py"]
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000"]
