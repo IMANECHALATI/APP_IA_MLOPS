@@ -7,9 +7,6 @@ import os
 from pydantic import BaseModel, Field
 from datetime import datetime
 
-# ─────────────────────────────────────────────
-# CONFIGURATION DU LOGGING
-# ─────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
@@ -20,9 +17,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ─────────────────────────────────────────────
-# INITIALISATION FASTAPI
-# ─────────────────────────────────────────────
 app = FastAPI(
     title="Système d'Irrigation Intelligente",
     description="API MLOps pour la prédiction des besoins en irrigation agricole",
@@ -31,7 +25,6 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS (pour autoriser le dashboard Streamlit)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -44,58 +37,53 @@ app.add_middleware(
 # CHARGEMENT DES ARTEFACTS ML
 # ─────────────────────────────────────────────
 try:
-    model      = joblib.load("models/model.pkl")
-    scaler     = joblib.load("models/scaler.pkl")
-    target_le  = joblib.load("models/target_encoder.pkl")
+    model     = joblib.load("models/model.pkl")
+    scaler    = joblib.load("models/scaler.pkl")
+    target_le = joblib.load("models/target_encoder.pkl")
+    ohe       = joblib.load("models/onehot_encoder.pkl")  # ✅ OneHotEncoder
 
-    categorical_cols = [
-        'Crop_Growth_Stage', 'Season',
-        'Irrigation_Type', 'Mulching_Used', 'Region'
-    ]
-    encoders = {col: joblib.load(f"models/encoder_{col}.pkl") for col in categorical_cols}
-
-    logger.info(" Tous les artefacts ML chargés avec succès.")
+    logger.info("✅ Tous les artefacts ML chargés avec succès.")
 
 except FileNotFoundError as e:
-    logger.error(f" Artefact ML introuvable : {e}")
+    logger.error(f"❌ Artefact ML introuvable : {e}")
     raise RuntimeError(f"Impossible de charger les artefacts ML : {e}")
 
-# Colonnes numériques à scaler
-numeric_cols = [
+# ✅ Cohérent avec preprocess.py
+CATEGORICAL_COLS = [
+    'Crop_Type', 'Crop_Growth_Stage', 'Season',
+    'Irrigation_Type', 'Mulching_Used', 'Region'
+]
+
+NUMERIC_COLS = [
     'Temperature_C', 'Humidity', 'Rainfall_mm',
     'Wind_Speed_kmh', 'Field_Area_hectare', 'Previous_Irrigation_mm'
 ]
 
-# Compteur de prédictions (monitoring simple)
 prediction_counter = {"total": 0, "errors": 0}
 
 # ─────────────────────────────────────────────
-# SCHÉMA D'ENTRÉE (PYDANTIC)
+# SCHÉMA D'ENTRÉE
 # ─────────────────────────────────────────────
-# Nouveau style Pydantic V2 
 class IrrigationData(BaseModel):
     Temperature_C:           float = Field(..., json_schema_extra={"example": 28.0})
     Humidity:                float = Field(..., ge=0.0, le=100.0, json_schema_extra={"example": 65.0})
     Rainfall_mm:             float = Field(..., ge=0.0, json_schema_extra={"example": 12.0})
     Wind_Speed_kmh:          float = Field(..., ge=0.0, json_schema_extra={"example": 15.0})
-    Crop_Type:               str   = Field(..., json_schema_extra={"example": "Wheat"})
+    Field_Area_hectare:      float = Field(..., gt=0.0, json_schema_extra={"example": 2.5})
+    Previous_Irrigation_mm:  float = Field(..., ge=0.0, json_schema_extra={"example": 20.0})
+    Crop_Type:               str   = Field(..., json_schema_extra={"example": "Wheat"})      # ✅ ajouté
     Crop_Growth_Stage:       str   = Field(..., json_schema_extra={"example": "Vegetative"})
     Season:                  str   = Field(..., json_schema_extra={"example": "Summer"})
     Irrigation_Type:         str   = Field(..., json_schema_extra={"example": "Drip"})
-    Field_Area_hectare:      float = Field(..., gt=0.0, json_schema_extra={"example": 2.5})
     Mulching_Used:           str   = Field(..., json_schema_extra={"example": "Yes"})
-    Previous_Irrigation_mm:  float = Field(..., ge=0.0, json_schema_extra={"example": 20.0})
     Region:                  str   = Field(..., json_schema_extra={"example": "North"})
-  
-# ─────────────────────────────────────────────
-# SCHÉMA DE RÉPONSE
-# ─────────────────────────────────────────────
+
 class PredictionResponse(BaseModel):
-    prediction_code:  int
-    irrigation_need:  str
-    confidence:       float
-    timestamp:        str
-    model_version:    str
+    prediction_code: int
+    irrigation_need: str
+    confidence:      float
+    timestamp:       str
+    model_version:   str
 
 # ─────────────────────────────────────────────
 # ENDPOINTS
@@ -109,10 +97,8 @@ def home():
         "version": "1.0.0"
     }
 
-
 @app.get("/health", tags=["Status"])
 def health():
-    """Vérifie que l'API et les modèles sont opérationnels."""
     return {
         "status": "ok",
         "model_loaded": model is not None,
@@ -122,60 +108,52 @@ def health():
         "uptime": datetime.now().isoformat()
     }
 
-
 @app.get("/model-info", tags=["MLOps"])
 def model_info():
-    """Retourne les informations sur le modèle en production."""
     return {
-        "model_type":        type(model).__name__,
-        "n_estimators":      getattr(model, "n_estimators", "N/A"),
-        "max_depth":         getattr(model, "max_depth", "N/A"),
-        "n_features":        getattr(model, "n_features_in_", "N/A"),
-        "classes":           list(target_le.classes_),
-        "categorical_cols":  categorical_cols,
-        "numeric_cols":      numeric_cols,
-        "version":           "1.0.0"
+        "model_type":       type(model).__name__,
+        "n_estimators":     getattr(model, "n_estimators", "N/A"),
+        "max_depth":        getattr(model, "max_depth", "N/A"),
+        "n_features":       getattr(model, "n_features_in_", "N/A"),
+        "classes":          list(target_le.classes_),
+        "categorical_cols": CATEGORICAL_COLS,
+        "numeric_cols":     NUMERIC_COLS,
+        "version":          "1.0.0"
     }
-
 
 @app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
 def predict_irrigation(data: IrrigationData):
-    """
-    Prédit le besoin en irrigation à partir des données agronomiques et météo.
-    Retourne le label, le code et le score de confiance.
-    """
     prediction_counter["total"] += 1
-
     try:
-        # A. Convertir en DataFrame
-        input_df = pd.DataFrame([data.dict()])
+        # ✅ Pydantic V2
+        input_dict = data.model_dump()
+        input_df   = pd.DataFrame([input_dict])
 
-        # B. Encodage des variables catégorielles
-        for col in categorical_cols:
-            if data.dict()[col] not in encoders[col].classes_:
-                raise HTTPException(
-                    status_code=422,
-                    detail=f"Valeur inconnue pour '{col}': '{data.dict()[col]}'. "
-                           f"Valeurs autorisées : {list(encoders[col].classes_)}"
-                )
-            input_df[col] = encoders[col].transform(input_df[col])
+        # A. Scaling numérique
+        input_df[NUMERIC_COLS] = scaler.transform(input_df[NUMERIC_COLS])
 
-        # C. Scaling des colonnes numériques
-        input_df[numeric_cols] = scaler.transform(input_df[numeric_cols])
+        # B. OneHotEncoding catégoriel ✅ cohérent avec preprocess.py
+        cat_array        = ohe.transform(input_df[CATEGORICAL_COLS])
+        cat_feature_names = ohe.get_feature_names_out(CATEGORICAL_COLS)
+        cat_df           = pd.DataFrame(cat_array, columns=cat_feature_names)
 
-        # D. Prédiction + Confiance
-        pred_code   = model.predict(input_df)[0]
-        proba       = model.predict_proba(input_df)[0]
-        confidence  = round(float(proba.max()), 4)
+        # C. Recombinaison
+        final_df = pd.concat([
+            input_df[NUMERIC_COLS].reset_index(drop=True),
+            cat_df.reset_index(drop=True)
+        ], axis=1)
 
-        # E. Décodage du label
+        # D. Prédiction
+        pred_code  = model.predict(final_df)[0]
+        proba      = model.predict_proba(final_df)[0]
+        confidence = round(float(proba.max()), 4)
+
+        # E. Décodage
         prediction_label = target_le.inverse_transform([pred_code])[0]
 
-        # F. Logging
         logger.info(
-            f" Prédiction | Label: {prediction_label} | "
-            f"Confiance: {confidence:.2%} | "
-            f"Région: {data.Region} | Crop: {data.Crop_Type}"
+            f"✅ Prédiction | Label: {prediction_label} | "
+            f"Confiance: {confidence:.2%} | Région: {data.Region}"
         )
 
         return PredictionResponse(
@@ -188,19 +166,13 @@ def predict_irrigation(data: IrrigationData):
 
     except HTTPException:
         raise
-
     except Exception as e:
         prediction_counter["errors"] += 1
-        logger.error(f" Erreur de prédiction : {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Erreur interne lors de la prédiction : {str(e)}"
-        )
-
+        logger.error(f"❌ Erreur de prédiction : {e}")
+        raise HTTPException(status_code=500, detail=f"Erreur interne : {str(e)}")
 
 @app.get("/metrics", tags=["MLOps"])
 def get_metrics():
-    """Endpoint de monitoring : statistiques d'utilisation de l'API."""
     total  = prediction_counter["total"]
     errors = prediction_counter["errors"]
     return {

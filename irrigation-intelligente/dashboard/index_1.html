@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroFlow | Dashboard d'Irrigation Intelligente</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.4/babel.min.js"></script>
+    <style>
+        :root {
+            --primary: #1a5c38; --primary-mid: #2e7d52;
+            --primary-light: rgba(46,125,82,0.12); --accent: #7ec56b;
+            --urgent: #c0392b; --moderate: #d4870a;
+            --glass: rgba(255,255,255,0.82); --glass-border: rgba(255,255,255,0.55);
+            --glass-dark: rgba(10,30,18,0.65); --text-dark: #0d1f15;
+            --text-muted: #5a7268; --shadow-card: 0 4px 24px rgba(0,0,0,0.10);
+            --transition: all 0.32s cubic-bezier(0.4,0,0.2,1);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'DM Sans',sans-serif; color:var(--text-dark); line-height:1.6; overflow-x:hidden; min-height:100vh; }
+        h1,h2,h3 { font-family:'Playfair Display',serif; }
+        .bg-layer { position:fixed; inset:0; z-index:0; background-image:url('https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1920&q=80'); background-size:cover; background-position:center; filter:brightness(0.7) saturate(1.1); }
+        .bg-overlay { position:fixed; inset:0; z-index:1; background:linear-gradient(135deg,rgba(8,28,16,0.72),rgba(20,60,35,0.55),rgba(10,40,22,0.68)); backdrop-filter:blur(1px); }
+        #root { position:relative; z-index:2; }
+        .container { max-width:1280px; margin:0 auto; padding:0 24px; }
+header {
+    background:var(--glass-dark);
+    backdrop-filter:blur(20px) saturate(1.5);
+    border-bottom:1px solid rgba(255,255,255,0.12);
+    padding:0.45rem 0;        /* ← réduit la hauteur */
+    position:sticky;
+    top:0;
+    z-index:100;
+}
+        .header-content { display:flex; justify-content:space-between; align-items:center; }
+        .logo { display:flex; align-items:center; gap:14px; font-family:'Playfair Display',serif; font-size:1.6rem; font-weight:700; color:#fff; letter-spacing:-0.02em; }
+        .logo em { color:var(--accent); font-style:italic; }
+.logo-icon {
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;  /* ← colle à gauche */
+    padding:0;
+    margin:0;
+    background:none;             /* ← supprime le fond vert */
+    box-shadow:none;
+}        .status-pill { display:flex; align-items:center; gap:8px; padding:7px 16px; border-radius:20px; font-size:0.82rem; font-weight:600; background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18); color:white; }
+        .status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+        .status-online { background:#34d399; box-shadow:0 0 10px #34d399; animation:pulse 2s infinite; }
+        .status-offline { background:#f87171; }
+        @keyframes pulse { 0%,100%{box-shadow:0 0 6px #34d399}50%{box-shadow:0 0 14px #34d399} }
+        nav { display:flex; gap:6px; margin:2rem 0; background:var(--glass-dark); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.13); padding:6px; border-radius:16px; width:fit-content; }
+        .nav-btn { padding:10px 22px; border:none; background:none; border-radius:11px; cursor:pointer; font-family:'DM Sans',sans-serif; font-weight:600; color:rgba(255,255,255,0.65); transition:var(--transition); display:flex; align-items:center; gap:8px; font-size:0.9rem; }
+        .nav-btn.active { background:linear-gradient(135deg,var(--primary-mid),var(--accent)); color:white; box-shadow:0 4px 14px rgba(46,125,82,0.4); }
+        .nav-btn:not(.active):hover { color:white; background:rgba(255,255,255,0.08); }
+        .card { background:var(--glass); backdrop-filter:blur(22px) saturate(1.6); border:1px solid var(--glass-border); border-radius:22px; padding:2rem; box-shadow:var(--shadow-card); animation:fadeUp 0.45s ease-out both; }
+        .card h2,.card h3 { color:var(--primary); }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
+        .grid-2 { display:grid; grid-template-columns:1.35fr 0.65fr; gap:1.8rem; align-items:start; }
+        @media(max-width:960px){.grid-2{grid-template-columns:1fr}}
+        .form-section { display:grid; grid-template-columns:1fr 1fr; gap:1.1rem; }
+        .form-group-title { grid-column:span 2; display:flex; align-items:center; gap:10px; margin-top:0.5rem; padding-bottom:8px; border-bottom:1.5px solid rgba(46,125,82,0.18); font-size:0.78rem; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--primary-mid); }
+        .input-group { display:flex; flex-direction:column; gap:5px; }
+        .input-group label { font-size:0.78rem; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.8px; }
+        input,select { padding:9px 12px; border:1.5px solid rgba(46,125,82,0.2); border-radius:10px; font-family:'DM Sans',sans-serif; font-size:0.9rem; background:rgba(255,255,255,0.7); transition:var(--transition); color:var(--text-dark); }
+        input:focus,select:focus { border-color:var(--primary-mid); outline:none; background:rgba(255,255,255,0.95); box-shadow:0 0 0 3px rgba(46,125,82,0.12); }
+        input.auto-filled { border-color:var(--accent) !important; background:rgba(126,197,107,0.12) !important; }
+        .btn-submit { grid-column:span 2; background:linear-gradient(135deg,var(--primary),var(--primary-mid)); color:white; padding:13px; border:none; border-radius:12px; font-weight:700; cursor:pointer; font-size:0.95rem; font-family:'DM Sans',sans-serif; transition:var(--transition); margin-top:0.5rem; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow:0 4px 16px rgba(30,90,55,0.35); }
+        .btn-submit:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 22px rgba(30,90,55,0.45); filter:brightness(1.08); }
+        .btn-submit:disabled { background:#b0bec5; cursor:not-allowed; box-shadow:none; }
+        .geo-banner { grid-column:span 2; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 18px; background:linear-gradient(135deg,rgba(46,125,82,0.15),rgba(126,197,107,0.08)); border:1.5px solid rgba(126,197,107,0.4); border-radius:14px; }
+        .geo-info { display:flex; flex-direction:column; gap:3px; }
+        .geo-info strong { font-size:0.88rem; color:var(--primary); display:flex; align-items:center; gap:6px; }
+        .geo-info span { font-size:0.75rem; color:var(--text-muted); }
+        .btn-geo { display:flex; align-items:center; gap:8px; padding:10px 20px; border-radius:10px; border:none; background:linear-gradient(135deg,var(--primary-mid),var(--accent)); color:white; font-family:'DM Sans',sans-serif; font-weight:700; font-size:0.83rem; cursor:pointer; transition:var(--transition); white-space:nowrap; box-shadow:0 3px 12px rgba(46,125,82,0.35); flex-shrink:0; }
+        .btn-geo:hover:not(:disabled) { transform:translateY(-1px); filter:brightness(1.08); }
+        .btn-geo:disabled { background:#b0bec5; cursor:not-allowed; box-shadow:none; transform:none; }
+        .weather-badge { grid-column:span 2; display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:10px 14px; background:rgba(126,197,107,0.12); border:1px solid rgba(126,197,107,0.35); border-radius:10px; font-size:0.8rem; color:var(--primary); animation:fadeUp 0.3s ease-out; }
+        .weather-chip { background:rgba(46,125,82,0.12); padding:3px 10px; border-radius:6px; font-weight:600; font-size:0.74rem; border:1px solid rgba(46,125,82,0.15); }
+        .auto-tag { margin-left:auto; font-size:0.68rem; background:linear-gradient(135deg,var(--primary-mid),var(--accent)); color:white; padding:2px 8px; border-radius:6px; font-weight:700; }
+        .result-card { display:flex; flex-direction:column; align-items:center; text-align:center; padding:2rem 1.5rem; border-radius:20px; border:2px solid transparent; min-height:360px; justify-content:center; }
+        .res-high { background:rgba(254,242,242,0.92); border-color:#fca5a5; color:var(--urgent); }
+        .res-medium { background:rgba(255,251,235,0.92); border-color:#fcd34d; color:var(--moderate); }
+        .res-low { background:rgba(240,253,244,0.92); border-color:#86efac; color:var(--primary); }
+        .confidence-bar { width:100%; height:7px; background:rgba(0,0,0,0.08); border-radius:4px; margin:1.2rem 0 0.6rem; overflow:hidden; }
+        .confidence-fill { height:100%; background:currentColor; border-radius:4px; transition:width 1.2s cubic-bezier(0.4,0,0.2,1); }
+        .metrics-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1.2rem; margin-bottom:1.8rem; }
+        .metric-card { background:var(--glass); backdrop-filter:blur(18px); border:1px solid var(--glass-border); padding:1.4rem 1.5rem; border-radius:18px; text-align:center; box-shadow:var(--shadow-card); }
+        .metric-value { font-size:2.2rem; font-weight:800; color:var(--primary); font-family:'Playfair Display',serif; }
+        .metric-label { font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; margin-bottom:4px; }
+        table { width:100%; border-collapse:collapse; margin-top:1rem; }
+        th { text-align:left; padding:12px; color:var(--text-muted); font-size:0.78rem; letter-spacing:0.8px; text-transform:uppercase; border-bottom:2px solid rgba(46,125,82,0.12); }
+        td { padding:13px 12px; border-bottom:1px solid rgba(46,125,82,0.08); font-size:0.88rem; }
+        tr:hover td { background:rgba(46,125,82,0.04); }
+        .badge { padding:4px 11px; border-radius:7px; font-size:0.73rem; font-weight:700; letter-spacing:0.5px; }
+        .loader { border:3px solid rgba(255,255,255,0.3); border-top:3px solid white; border-radius:50%; width:18px; height:18px; animation:spin 0.8s linear infinite; display:inline-block; }
+        .loader-sm { border:2px solid rgba(255,255,255,0.4); border-top:2px solid white; border-radius:50%; width:13px; height:13px; animation:spin 0.8s linear infinite; display:inline-block; }
+        @keyframes spin { to{transform:rotate(360deg)} }
+        .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; min-height:280px; opacity:0.45; color:var(--text-muted); gap:12px; }
+        .pipeline { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+        .pipeline-step { background:var(--primary-light); padding:6px 13px; border-radius:8px; font-size:0.78rem; color:var(--primary); font-weight:600; }
+        .class-row { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px solid rgba(46,125,82,0.08); }
+        .class-row:last-child { border-bottom:none; }
+        .error-box { padding:10px 14px; background:#fef2f2; border-radius:10px; color:#c0392b; font-size:0.85rem; border:1px solid #fca5a5; grid-column:span 2; }
+        ::-webkit-scrollbar { width:6px; }
+        ::-webkit-scrollbar-thumb { background:rgba(46,125,82,0.3); border-radius:3px; }
+        footer { text-align:center; padding:2.5rem 0; color:rgba(255,255,255,0.45); font-size:0.82rem; position:relative; z-index:2; }
+    </style>
+</head>
+<body>
+<div class="bg-layer"></div>
+<div class="bg-overlay"></div>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+const API_BASE = "http://127.0.0.1:8000";
+
+const DEFAULTS = {
+    Temperature_C:           25,
+    Humidity:                60,
+    Rainfall_mm:             10,
+    Wind_Speed_kmh:          15,
+    Field_Area_hectare:      2.5,
+    Previous_Irrigation_mm:  20,
+    Crop_Type:               'Wheat',
+    Crop_Growth_Stage:       'Vegetative',
+    Season:                  'Spring',
+    Irrigation_Type:         'Drip',
+    Mulching_Used:           'No',
+    Region:                  'North',
+};
+
+// API METEO — wttr.in (gratuite, sans cle API)
+async function fetchWeatherByCoords(lat, lon) {
+    const res  = await fetch(`https://wttr.in/${lat},${lon}?format=j1`);
+    if (!res.ok) throw new Error("Service meteo indisponible");
+    const data = await res.json();
+    const cur  = data.current_condition[0];
+    return {
+        Temperature_C:  parseFloat(cur.temp_C),
+        Humidity:       parseFloat(cur.humidity),
+        Wind_Speed_kmh: parseFloat(cur.windspeedKmph),
+        Rainfall_mm:    parseFloat(cur.precipMM),
+        city:           data.nearest_area?.[0]?.areaName?.[0]?.value || "Position actuelle",
+        country:        data.nearest_area?.[0]?.country?.[0]?.value  || "",
+        weatherDesc:    cur.weatherDesc?.[0]?.value                   || "",
+    };
+}
+
+function App() {
+    const [activeTab, setActiveTab]     = useState('prediction');
+    const [isOnline, setIsOnline]       = useState(false);
+    const [loading, setLoading]         = useState(false);
+    const [geoLoading, setGeoLoading]   = useState(false);
+    const [geoError, setGeoError]       = useState(null);
+    const [weatherInfo, setWeatherInfo] = useState(null);
+    const [autoFilled, setAutoFilled]   = useState(false);
+    const [metrics, setMetrics]         = useState(null);
+    const [modelInfo, setModelInfo]     = useState(null);
+    const [prediction, setPrediction]   = useState(null);
+    const [history, setHistory]         = useState([]);
+    const [error, setError]             = useState(null);
+    const [formData, setFormData]       = useState(DEFAULTS);
+
+    const WEATHER_FIELDS = ['Temperature_C','Humidity','Wind_Speed_kmh','Rainfall_mm'];
+
+    const set = (k, v) => {
+        setFormData(p => ({ ...p, [k]: v }));
+        if (WEATHER_FIELDS.includes(k)) setAutoFilled(false);
+    };
+
+    useEffect(() => {
+        checkStatus();
+        const iv = setInterval(checkStatus, 15000);
+        return () => clearInterval(iv);
+    }, []);
+
+    const checkStatus = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/health`);
+            setIsOnline(res.ok);
+            if (res.ok) fetchMetrics();
+        } catch { setIsOnline(false); }
+    };
+
+    const fetchMetrics = async () => {
+        try {
+            const [mr, mo] = await Promise.all([
+                fetch(`${API_BASE}/metrics`),
+                fetch(`${API_BASE}/model-info`)
+            ]);
+            setMetrics(await mr.json());
+            setModelInfo(await mo.json());
+        } catch(e) { console.error(e); }
+    };
+
+    // GEOLOCALISATION + AUTO-REMPLISSAGE METEO
+    const handleGeoLocate = () => {
+        setGeoLoading(true);
+        setGeoError(null);
+        setAutoFilled(false);
+        setWeatherInfo(null);
+
+        if (!navigator.geolocation) {
+            setGeoError("Geolocalisation non supportee par ce navigateur.");
+            setGeoLoading(false);
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+                try {
+                    const { latitude, longitude } = pos.coords;
+                    const weather = await fetchWeatherByCoords(latitude, longitude);
+                    setFormData(prev => ({
+                        ...prev,
+                        Temperature_C:  weather.Temperature_C,
+                        Humidity:       weather.Humidity,
+                        Wind_Speed_kmh: weather.Wind_Speed_kmh,
+                        Rainfall_mm:    weather.Rainfall_mm,
+                    }));
+                    setWeatherInfo(weather);
+                    setAutoFilled(true);
+                } catch(err) {
+                    setGeoError(`Erreur meteo : ${err.message}`);
+                } finally {
+                    setGeoLoading(false);
+                }
+            },
+            (err) => {
+                const msgs = {
+                    1: "Permission refusee. Autorisez la geolocalisation dans votre navigateur.",
+                    2: "Position introuvable. Verifiez votre connexion GPS.",
+                    3: "Delai depasse. Reessayez.",
+                };
+                setGeoError(msgs[err.code] || "Erreur de geolocalisation inconnue.");
+                setGeoLoading(false);
+            },
+            { timeout: 10000, maximumAge: 300000 }
+        );
+    };
+
+    const handlePredict = async (e) => {
+        e.preventDefault();
+        setLoading(true); setError(null);
+        try {
+            const payload = {
+                ...formData,
+                Temperature_C:           parseFloat(formData.Temperature_C),
+                Humidity:                parseFloat(formData.Humidity),
+                Rainfall_mm:             parseFloat(formData.Rainfall_mm),
+                Wind_Speed_kmh:          parseFloat(formData.Wind_Speed_kmh),
+                Field_Area_hectare:      parseFloat(formData.Field_Area_hectare),
+                Previous_Irrigation_mm:  parseFloat(formData.Previous_Irrigation_mm),
+            };
+            const res = await fetch(`${API_BASE}/predict`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(JSON.stringify(err.detail || err));
+            }
+            const data = await res.json();
+            setPrediction(data);
+            setHistory(prev => [{
+                ...data, ...formData,
+                _localTime: new Date().toLocaleTimeString('fr-FR'),
+                _city:      weatherInfo?.city || '-',
+            }, ...prev].slice(0, 50));
+            fetchMetrics();
+        } catch(err) {
+            setError(`Erreur : ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const styleOf  = l => l === "High" ? "res-high" : l === "Medium" ? "res-medium" : "res-low";
+    const labelOf  = l => l === "High" ? "Irrigation Urgente" : l === "Medium" ? "Irrigation Moderee" : "Pas d'Irrigation";
+    const adviceOf = l => {
+        if (l === "High")   return "Appliquez 35-50 mm d'eau immediatement. Stress hydrique critique detecte.";
+        if (l === "Medium") return "Planifiez un arrosage de 20-30 mm dans les prochaines 24 heures.";
+        return "Sol bien hydrate - aucune action requise. Continuez la surveillance.";
+    };
+    const formatTime = ts => {
+        if (!ts) return new Date().toLocaleTimeString('fr-FR');
+        try { const d = new Date(ts); return isNaN(d.getTime()) ? new Date().toLocaleTimeString('fr-FR') : d.toLocaleTimeString('fr-FR'); }
+        catch { return new Date().toLocaleTimeString('fr-FR'); }
+    };
+    const formatConf = c => (c == null || isNaN(c)) ? '-' : `${(c*100).toFixed(1)}%`;
+
+    // Tabs avec emojis au lieu de Lucide
+    const Tabs = [
+        { id:'prediction',  label:'Prediction' },
+        { id:'monitoring', label:'Monitoring' },
+        { id:'history',    label:'Historique' },
+        { id:'model',      label:'Modele'     },
+    ];
+
+    return (
+        <div>
+            <header>
+                <div className="container header-content" style={{justifyContent:'space-between', alignItems:'left', padding:'0 24px'}}>
+                    <div className="logo" style={{paddingLeft:'0', marginLeft:'0'}}>
+    <img
+        src="logo.png"
+        alt="logo"
+        style={{
+            height:'65px',
+            width:'auto',
+            objectFit:'contain',
+            display:'block'
+        }}
+    />
+    Agro<em>Flow</em>
+</div>
+                    <div className="status-pill">
+                        <span className={`status-dot ${isOnline ? 'status-online' : 'status-offline'}`}></span>
+                        {isOnline ? 'API Connectee' : 'API Hors-ligne'}
+                    </div>
+                </div>
+            </header>
+
+            <main className="container">
+                <nav>
+                    {Tabs.map(t => (
+                        <button key={t.id}
+                            className={`nav-btn ${activeTab===t.id?'active':''}`}
+                            onClick={()=>setActiveTab(t.id)}>
+                            {t.emoji} {t.label}
+                        </button>
+                    ))}
+                </nav>
+
+                {/* PREDICTION */}
+                {activeTab === 'prediction' && (
+                    <div className="grid-2">
+                        <div className="card">
+                            <h2 style={{marginBottom:'1.4rem',fontSize:'1.5rem'}}>Parametres du Modele</h2>
+                            <form onSubmit={handlePredict} className="form-section">
+
+                                {/* BOUTON GEOLOCALISATION */}
+                                <div className="geo-banner">
+                                    <div className="geo-info">
+                                        <strong> Auto-remplissage Meteo GPS</strong>
+                                        <span>Detecte votre position et remplit : Temperature, Humidite, Vent, Precipitations</span>
+                                    </div>
+                                    <button type="button" className="btn-geo" onClick={handleGeoLocate} disabled={geoLoading}>
+                                        {geoLoading
+                                            ? <><span className="loader-sm"></span> Localisation...</>
+                                            : <>📡 Ma Position</>
+                                        }
+                                    </button>
+                                </div>
+
+                                {/* BADGE METEO */}
+                                {autoFilled && weatherInfo && (
+                                    <div className="weather-badge">
+                                         <strong>{weatherInfo.city}{weatherInfo.country?`, ${weatherInfo.country}`:''}</strong>
+                                        <span className="weather-chip">{weatherInfo.weatherDesc}</span>
+                                        <span className="weather-chip"> {weatherInfo.Temperature_C}°C</span>
+                                        <span className="weather-chip"> {weatherInfo.Humidity}%</span>
+                                        <span className="weather-chip"> {weatherInfo.Wind_Speed_kmh} km/h</span>
+                                        <span className="weather-chip"> {weatherInfo.Rainfall_mm} mm</span>
+                                        <span className="auto-tag">AUTO GPS</span>
+                                    </div>
+                                )}
+
+                                {geoError && <div className="error-box">⚠️ {geoError}</div>}
+
+                                {/* METEO */}
+                                <div className="form-group-title">
+                                     Donnees Meteorologiques
+                                    {autoFilled && <span style={{marginLeft:'auto',fontSize:'0.68rem',background:'linear-gradient(135deg,var(--primary-mid),var(--accent))',color:'white',padding:'2px 8px',borderRadius:'6px',fontWeight:700}}>AUTO GPS</span>}
+                                </div>
+                                <div className="input-group">
+                                    <label>Temperature (C)</label>
+                                    <input type="number" step="0.1"
+                                        className={autoFilled?'auto-filled':''}
+                                        value={formData.Temperature_C}
+                                        onChange={e=>set('Temperature_C',e.target.value)} />
+                                </div>
+                                <div className="input-group">
+                                    <label>Humidite (%)</label>
+                                    <input type="number" min="0" max="100"
+                                        className={autoFilled?'auto-filled':''}
+                                        value={formData.Humidity}
+                                        onChange={e=>set('Humidity',e.target.value)} />
+                                </div>
+                                <div className="input-group">
+                                    <label>Precipitations (mm)</label>
+                                    <input type="number" step="0.1" min="0"
+                                        className={autoFilled?'auto-filled':''}
+                                        value={formData.Rainfall_mm}
+                                        onChange={e=>set('Rainfall_mm',e.target.value)} />
+                                </div>
+                                <div className="input-group">
+                                    <label>Vitesse du Vent (km/h)</label>
+                                    <input type="number" step="0.1" min="0"
+                                        className={autoFilled?'auto-filled':''}
+                                        value={formData.Wind_Speed_kmh}
+                                        onChange={e=>set('Wind_Speed_kmh',e.target.value)} />
+                                </div>
+
+                                {/* CULTURE */}
+                                <div className="form-group-title"> Culture</div>
+                                <div className="input-group">
+                                    <label>Type de Culture</label>
+                                    <select value={formData.Crop_Type} onChange={e=>set('Crop_Type',e.target.value)}>
+                                        {['Wheat','Rice','Maize','Soybean','Cotton','Sugarcane','Potato','Tomato'].map(o=><option key={o}>{o}</option>)}
+                                    </select>
+                                </div>
+                                <div className="input-group">
+                                    <label>Stade de Croissance</label>
+                                    <select value={formData.Crop_Growth_Stage} onChange={e=>set('Crop_Growth_Stage',e.target.value)}>
+                                        {['Germination','Vegetative','Flowering','Maturity'].map(o=><option key={o}>{o}</option>)}
+                                    </select>
+                                </div>
+                                <div className="input-group">
+                                    <label>Saison</label>
+                                    <select value={formData.Season} onChange={e=>set('Season',e.target.value)}>
+                                        {['Spring','Summer','Autumn','Winter'].map(o=><option key={o}>{o}</option>)}
+                                    </select>
+                                </div>
+                                <div className="input-group">
+                                    <label>Region</label>
+                                    <select value={formData.Region} onChange={e=>set('Region',e.target.value)}>
+                                        {['North','South','East','West','Central'].map(o=><option key={o}>{o}</option>)}
+                                    </select>
+                                </div>
+
+                                {/* IRRIGATION */}
+                                <div className="form-group-title"> Irrigation</div>
+                                <div className="input-group">
+                                    <label>Type d'Irrigation</label>
+                                    <select value={formData.Irrigation_Type} onChange={e=>set('Irrigation_Type',e.target.value)}>
+                                        {['Drip','Sprinkler','Flood','Furrow','Center Pivot'].map(o=><option key={o}>{o}</option>)}
+                                    </select>
+                                </div>
+                                <div className="input-group">
+                                    <label>Paillage Utilise</label>
+                                    <select value={formData.Mulching_Used} onChange={e=>set('Mulching_Used',e.target.value)}>
+                                        {['Yes','No'].map(o=><option key={o}>{o}</option>)}
+                                    </select>
+                                </div>
+                                <div className="input-group">
+                                    <label>Superficie (hectares)</label>
+                                    <input type="number" step="0.1" min="0.1"
+                                        value={formData.Field_Area_hectare}
+                                        onChange={e=>set('Field_Area_hectare',e.target.value)} />
+                                </div>
+                                <div className="input-group">
+                                    <label>Derniere Irrigation (mm)</label>
+                                    <input type="number" step="0.5" min="0"
+                                        value={formData.Previous_Irrigation_mm}
+                                        onChange={e=>set('Previous_Irrigation_mm',e.target.value)} />
+                                </div>
+
+                                <button className="btn-submit" type="submit" disabled={!isOnline||loading}>
+                                    {loading
+                                        ? <><span className="loader"></span> Analyse en cours...</>
+                                        : <> Generer la Prediction</>
+                                    }
+                                </button>
+                            </form>
+                            {error && (
+                                <div style={{marginTop:'12px',padding:'10px 14px',background:'#fef2f2',borderRadius:'10px',color:'#c0392b',fontSize:'0.85rem',border:'1px solid #fca5a5'}}>
+                                     {error}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* RESULTAT */}
+                        <div style={{position:'sticky',top:'80px'}}>
+                            <div className="card">
+                                {prediction ? (
+                                    <div className={`result-card ${styleOf(prediction.irrigation_need)}`}>
+                                        <div style={{fontSize:'3.5rem'}}>💧</div>
+                                        <h2 style={{margin:'1rem 0',fontSize:'1.4rem'}}>
+                                            {labelOf(prediction.irrigation_need)}
+                                        </h2>
+                                        <p style={{fontWeight:600,fontSize:'0.95rem',lineHeight:1.5}}>
+                                            {adviceOf(prediction.irrigation_need)}
+                                        </p>
+                                        <div className="confidence-bar">
+                                            <div className="confidence-fill"
+                                                style={{width:prediction.confidence!=null?`${(prediction.confidence*100).toFixed(0)}%`:'0%'}}>
+                                            </div>
+                                        </div>
+                                        <p style={{fontSize:'0.83rem',opacity:0.75}}>
+                                            Confiance : {formatConf(prediction.confidence)}
+                                        </p>
+                                        {weatherInfo && (
+                                            <p style={{fontSize:'0.74rem',opacity:0.6,marginTop:'4px'}}>
+                                                 {weatherInfo.city} — {weatherInfo.weatherDesc}
+                                            </p>
+                                        )}
+                                        <div style={{marginTop:'1.5rem',textAlign:'left',width:'100%',fontSize:'0.8rem',opacity:0.7}}>
+                                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
+                                                <div><strong>Version :</strong> {prediction.model_version||'-'}</div>
+                                                <div><strong>Heure :</strong> {formatTime(prediction.timestamp)}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="empty-state">
+                                        <div style={{fontSize:'3rem'}}>📡</div>
+                                        <p style={{fontWeight:600}}>Aucune analyse disponible</p>
+                                        <p style={{fontSize:'0.85rem',textAlign:'center'}}>
+                                            Cliquez "Ma Position"<br/>pour auto-remplir la meteo,<br/>puis lancez la prediction
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* MONITORING */}
+                {activeTab === 'monitoring' && (
+                    <div>
+                        <div className="metrics-grid">
+                            {[
+                                { label:'Predictions Totales', value:metrics?.total_predictions??0,                           color:'var(--primary)' },
+                                { label:'Taux de Succes',      value:metrics?`${(metrics.success_rate*100).toFixed(1)}%`:'-', color:'#10b981'        },
+                                { label:'Erreurs Serveur',     value:metrics?.total_errors??0,                                color:'var(--urgent)'  },
+                                { label:'Uptime API',          value:'99.9%',                                                 color:'#6366f1'        },
+                            ].map((m,i) => (
+                                <div key={i} className="metric-card">
+                                    <p className="metric-label">{m.label}</p>
+                                    <p className="metric-value" style={{color:m.color}}>{m.value}</p>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="card">
+                            <h3>Performance de l'Infrastructure</h3>
+                            <div className="confidence-bar" style={{height:'20px',borderRadius:'10px',marginTop:'1.2rem'}}>
+                                <div className="confidence-fill" style={{width:'98%',background:'linear-gradient(90deg,var(--primary),var(--accent))'}}></div>
+                            </div>
+                            <p style={{fontSize:'0.83rem',color:'var(--text-muted)',marginTop:'8px'}}>
+                                Systeme stable — {modelInfo?.model_type||'ML Model'} v{modelInfo?.version||'1.0'} — {modelInfo?.n_features||12} features actives
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* HISTORIQUE */}
+                {activeTab === 'history' && (
+                    <div className="card">
+                        <h3>Historique des Predictions (session)</h3>
+                        {history.length > 0 ? (
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Heure</th><th>Localite</th><th>Culture</th>
+                                        <th>Saison</th><th>Confiance</th><th>Resultat</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {history.map((h,i) => (
+                                        <tr key={i}>
+                                            <td>{h._localTime||'-'}</td>
+                                            <td>{h._city||'-'}</td>
+                                            <td>{h.Crop_Type}</td>
+                                            <td>{h.Season}</td>
+                                            <td>{formatConf(h.confidence)}</td>
+                                            <td>
+                                                <span className={`badge ${styleOf(h.irrigation_need)}`}>
+                                                    {h.irrigation_need||'-'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <p style={{marginTop:'1rem',color:'var(--text-muted)'}}>Aucune prediction dans cette session.</p>
+                        )}
+                    </div>
+                )}
+
+                {/* MODELE */}
+                {activeTab === 'model' && (
+                    <div className="grid-2">
+                        <div className="card">
+                            <h3>Architecture du Modele</h3>
+                            <div style={{display:'flex',flexDirection:'column',gap:'10px',marginTop:'1.4rem',fontSize:'0.9rem'}}>
+                                {[
+                                    ['Algorithme',     modelInfo?.model_type   ||'-'],
+                                    ['Estimateurs',    modelInfo?.n_estimators ||'-'],
+                                    ['Profondeur Max', modelInfo?.max_depth    ||'-'],
+                                    ['Features',       modelInfo?.n_features   ||12],
+                                    ['Version',        modelInfo?.version      ||'1.0'],
+                                ].map(([k,v]) => (
+                                    <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'8px 12px',background:'var(--primary-light)',borderRadius:'9px'}}>
+                                        <span style={{fontWeight:600,color:'var(--text-muted)'}}>{k}</span>
+                                        <span style={{fontWeight:700,color:'var(--primary)'}}>{v}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <p style={{fontWeight:700,marginTop:'1.6rem',marginBottom:'4px',fontSize:'0.85rem',color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'1px'}}>Pipeline</p>
+                            <div className="pipeline">
+                                {['Validation','StandardScaler','OneHotEncoder','ML Model','JSON Response'].map((s,i,arr)=>(
+                                    <span key={s} className="pipeline-step">{s}{i<arr.length-1?' ->':' ✓'}</span>
+                                ))}
+                            </div>
+                            <p style={{fontWeight:700,marginTop:'1.6rem',marginBottom:'8px',fontSize:'0.85rem',color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'1px'}}>Colonnes Numeriques</p>
+                            <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
+                                {['Temperature_C','Humidity','Rainfall_mm','Wind_Speed_kmh','Field_Area_hectare','Previous_Irrigation_mm'].map(c=>(
+                                    <span key={c} style={{background:'#e0f2fe',color:'#0369a1',padding:'4px 10px',borderRadius:'7px',fontSize:'0.75rem',fontWeight:600}}>{c}</span>
+                                ))}
+                            </div>
+                            <p style={{fontWeight:700,marginTop:'1.2rem',marginBottom:'8px',fontSize:'0.85rem',color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'1px'}}>Colonnes Categorielles</p>
+                            <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
+                                {['Crop_Type','Crop_Growth_Stage','Season','Irrigation_Type','Mulching_Used','Region'].map(c=>(
+                                    <span key={c} style={{background:'#fef3c7',color:'#92400e',padding:'4px 10px',borderRadius:'7px',fontSize:'0.75rem',fontWeight:600}}>{c}</span>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="card">
+                            <h3>Classes de Sortie</h3>
+                            <div style={{marginTop:'1.4rem'}}>
+                                {[
+                                    {code:'High',   desc:"Besoin critique — irrigation immediate (35-50 mm)"},
+                                    {code:'Medium', desc:"Besoin modere — arrosage sous 24h (20-30 mm)"},
+                                    {code:'Low',    desc:"Niveau optimal — aucune action requise"},
+                                ].map(({code,desc})=>(
+                                    <div key={code} className="class-row">
+                                        <span className={`badge ${styleOf(code)}`} style={{minWidth:60,textAlign:'center'}}>{code}</span>
+                                        <span style={{fontSize:'0.85rem',color:'var(--text-muted)'}}>{desc}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{marginTop:'1.6rem',padding:'14px',background:'var(--primary-light)',borderRadius:'12px'}}>
+                                <p style={{fontWeight:700,fontSize:'0.82rem',color:'var(--primary)',marginBottom:'6px'}}>📡 Geolocalisation Meteo</p>
+                                <p style={{fontSize:'0.78rem',color:'var(--text-muted)',lineHeight:1.6}}>
+                                    Bouton "Ma Position" utilise le GPS + API <strong>wttr.in</strong> (gratuite, sans cle) pour remplir automatiquement Temperature, Humidite, Vent et Precipitations en temps reel.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </main>
+
+            <footer>
+                &copy; 2026 AgroFlow Intelligence Artificielle — Technologie au service de la Terre
+            </footer>
+        </div>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
