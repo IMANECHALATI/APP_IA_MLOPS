@@ -1,0 +1,15 @@
+{
+    "file": "data/irrigation_prediction.csv",
+    "rows": 10000,
+    "columns": 20,
+    "nulls_total": 0,
+    "duplicates": 0,
+    "errors": [
+        "'Rainfall_mm' : 1982 valeurs hors [0.0, 2000.0] (19.82%)"
+    ],
+    "warnings": [
+        "Colonnes suppl\u00e9mentaires (ignor\u00e9es) : ['Soil_Type', 'Soil_pH', 'Soil_Moisture', 'Organic_Carbon', 'Electrical_Conductivity', 'Sunlight_Hours', 'Water_Source']",
+        "D\u00e9s\u00e9quilibre de classes : classe minoritaire = 3.4%. Consid\u00e9rer SMOTE ou class_weight='balanced'."
+    ],
+    "status": "FAILED"
+}

@@ -1,0 +1,16 @@
+{
+    "total_rows_raw": 10000,
+    "duplicates_removed": 0,
+    "nulls_removed": 0,
+    "outliers_capped": 1982,
+    "rows_final": 10000,
+    "train_size": 8000,
+    "test_size": 2000,
+    "n_features_original": 12,
+    "n_features_final": 30,
+    "target_classes": [
+        "High",
+        "Low",
+        "Medium"
+    ]
+}

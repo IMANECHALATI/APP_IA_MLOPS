@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # INITIALISATION FASTAPI
 # ─────────────────────────────────────────────
 app = FastAPI(
-    title="🌿 Système d'Irrigation Intelligente",
+    title="Système d'Irrigation Intelligente",
     description="API MLOps pour la prédiction des besoins en irrigation agricole",
     version="1.0.0",
     docs_url="/docs",
@@ -49,8 +49,8 @@ try:
     target_le  = joblib.load("models/target_encoder.pkl")
 
     categorical_cols = [
-        'Soil_Type', 'Crop_Type', 'Crop_Growth_Stage', 'Season',
-        'Irrigation_Type', 'Water_Source', 'Mulching_Used', 'Region'
+        'Crop_Growth_Stage', 'Season',
+        'Irrigation_Type', 'Mulching_Used', 'Region'
     ]
     encoders = {col: joblib.load(f"models/encoder_{col}.pkl") for col in categorical_cols}
 
@@ -62,8 +62,7 @@ except FileNotFoundError as e:
 
 # Colonnes numériques à scaler
 numeric_cols = [
-    'Soil_pH', 'Soil_Moisture', 'Organic_Carbon', 'Electrical_Conductivity',
-    'Temperature_C', 'Humidity', 'Rainfall_mm', 'Sunlight_Hours',
+    'Temperature_C', 'Humidity', 'Rainfall_mm',
     'Wind_Speed_kmh', 'Field_Area_hectare', 'Previous_Irrigation_mm'
 ]
 
@@ -73,27 +72,21 @@ prediction_counter = {"total": 0, "errors": 0}
 # ─────────────────────────────────────────────
 # SCHÉMA D'ENTRÉE (PYDANTIC)
 # ─────────────────────────────────────────────
+# Nouveau style Pydantic V2 
 class IrrigationData(BaseModel):
-    Soil_Type:               str   = Field(..., example="Sandy")
-    Soil_pH:                 float = Field(..., ge=0.0, le=14.0, example=6.5)
-    Soil_Moisture:           float = Field(..., ge=0.0, example=35.2)
-    Organic_Carbon:          float = Field(..., ge=0.0, example=1.5)
-    Electrical_Conductivity: float = Field(..., ge=0.0, example=0.8)
-    Temperature_C:           float = Field(..., example=28.0)
-    Humidity:                float = Field(..., ge=0.0, le=100.0, example=65.0)
-    Rainfall_mm:             float = Field(..., ge=0.0, example=12.0)
-    Sunlight_Hours:          float = Field(..., ge=0.0, le=24.0, example=8.5)
-    Wind_Speed_kmh:          float = Field(..., ge=0.0, example=15.0)
-    Crop_Type:               str   = Field(..., example="Wheat")
-    Crop_Growth_Stage:       str   = Field(..., example="Vegetative")
-    Season:                  str   = Field(..., example="Summer")
-    Irrigation_Type:         str   = Field(..., example="Drip")
-    Water_Source:            str   = Field(..., example="Groundwater")
-    Field_Area_hectare:      float = Field(..., gt=0.0, example=2.5)
-    Mulching_Used:           str   = Field(..., example="Yes")
-    Previous_Irrigation_mm:  float = Field(..., ge=0.0, example=20.0)
-    Region:                  str   = Field(..., example="North")
-
+    Temperature_C:           float = Field(..., json_schema_extra={"example": 28.0})
+    Humidity:                float = Field(..., ge=0.0, le=100.0, json_schema_extra={"example": 65.0})
+    Rainfall_mm:             float = Field(..., ge=0.0, json_schema_extra={"example": 12.0})
+    Wind_Speed_kmh:          float = Field(..., ge=0.0, json_schema_extra={"example": 15.0})
+    Crop_Type:               str   = Field(..., json_schema_extra={"example": "Wheat"})
+    Crop_Growth_Stage:       str   = Field(..., json_schema_extra={"example": "Vegetative"})
+    Season:                  str   = Field(..., json_schema_extra={"example": "Summer"})
+    Irrigation_Type:         str   = Field(..., json_schema_extra={"example": "Drip"})
+    Field_Area_hectare:      float = Field(..., gt=0.0, json_schema_extra={"example": 2.5})
+    Mulching_Used:           str   = Field(..., json_schema_extra={"example": "Yes"})
+    Previous_Irrigation_mm:  float = Field(..., ge=0.0, json_schema_extra={"example": 20.0})
+    Region:                  str   = Field(..., json_schema_extra={"example": "North"})
+  
 # ─────────────────────────────────────────────
 # SCHÉMA DE RÉPONSE
 # ─────────────────────────────────────────────
@@ -107,7 +100,6 @@ class PredictionResponse(BaseModel):
 # ─────────────────────────────────────────────
 # ENDPOINTS
 # ─────────────────────────────────────────────
-
 @app.get("/", tags=["Status"])
 def home():
     return {

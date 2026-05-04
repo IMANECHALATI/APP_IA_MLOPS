@@ -1,0 +1,23 @@
+artifact_path: file:///C:/Users/KHALIL/Desktop/S6/projet_ML_OPS/APP_IA_MLOPS/irrigation-intelligente/mlruns/2/models/m-1be86d0e9cc745b380d296c81a8c5e0f/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.10.11
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.7.2
+    skops_trusted_types: null
+mlflow_version: 3.11.1
+model_id: m-1be86d0e9cc745b380d296c81a8c5e0f
+model_size_bytes: 6905791
+model_uuid: m-1be86d0e9cc745b380d296c81a8c5e0f
+prompts: null
+run_id: 7b851de7e2b14e55a0452894e8fd3e5b
+utc_time_created: '2026-05-02 15:22:14.296690'

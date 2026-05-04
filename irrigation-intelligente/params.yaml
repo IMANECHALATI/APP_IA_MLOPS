@@ -14,17 +14,19 @@ data:
 train:
   n_estimators: 100
   max_depth: 10
-  # Paramètres à tuner plus tard
   min_samples_split: 2
   min_samples_leaf: 1
+  xgb_n_estimators: 100
+  xgb_max_depth: 6
+  xgb_learning_rate: 0.1
 
 evaluate:
-  accuracy_threshold: 0.75   # Seuil minimum pour valider le modèle
+  accuracy_threshold: 0.75
   metrics_path: "metrics/scores.json"
 
 mlflow:
-  experiment_name: "irrigation-intelligente"
-  tracking_uri: "mlruns"     # Local. Remplacer par URL serveur MLflow si distant
+  experiment_name: "s3id_ia"
+  tracking_uri: "mlruns"
   model_registry_name: "IrrigationModel"
 
 api:

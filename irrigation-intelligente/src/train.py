@@ -1,5 +1,5 @@
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier          # ← 1. Remplace RandomForestClassifier
 import joblib
 import yaml
 import os
@@ -14,40 +14,45 @@ def train(config_path):
 
     X_train = pd.read_csv("data/train_X.csv")
     y_train = pd.read_csv("data/train_y.csv")
-    X_test  = pd.read_csv("data/test_X.csv")   # ← tu dois avoir ça
+    X_test  = pd.read_csv("data/test_X.csv")
     y_test  = pd.read_csv("data/test_y.csv")
 
-    #  MLflow : démarrer un run
-    mlflow.set_experiment("irrigation-intelligente")
+    mlflow.set_experiment("s3id_ia")
 
     with mlflow.start_run():
 
         # Log des paramètres
-        mlflow.log_param("n_estimators", config['train']['n_estimators'])
-        mlflow.log_param("max_depth",    config['train']['max_depth'])
-        mlflow.log_param("random_state", config['base']['random_state'])
+        mlflow.log_param("model_type",    "XGBoost")
+        mlflow.log_param("n_estimators",  config['train']['xgb_n_estimators'])
+        mlflow.log_param("max_depth",     config['train']['xgb_max_depth'])
+        mlflow.log_param("learning_rate", config['train']['xgb_learning_rate'])
+        mlflow.log_param("random_state",  config['base']['random_state'])
 
-        model = RandomForestClassifier(
-            n_estimators=config['train']['n_estimators'],
-            max_depth=config['train']['max_depth'],
-            random_state=config['base']['random_state']
+        model = XGBClassifier(             # ← 2. Remplace RandomForestClassifier
+            n_estimators=config['train']['xgb_n_estimators'],
+            max_depth=config['train']['xgb_max_depth'],
+            learning_rate=config['train']['xgb_learning_rate'],
+            random_state=config['base']['random_state'],
+            eval_metric='mlogloss',
+            verbosity=0
         )
+
         model.fit(X_train, y_train.values.ravel())
 
         # Log des métriques
         y_pred   = model.predict(X_test)
         accuracy = accuracy_score(y_test, y_pred)
         mlflow.log_metric("accuracy", accuracy)
-        print(f" Accuracy : {accuracy:.4f}")
+        print(f"Accuracy : {accuracy:.4f}")
 
         # Log du modèle dans MLflow Registry
         mlflow.sklearn.log_model(
-            model, 
-            "random_forest_model",
-            registered_model_name="IrrigationModel"  # ← versioning auto
+            model,
+            name="xgboost_model",          # ← 3. Remplace "random_forest_model"
+            registered_model_name="IrrigationModel"
         )
 
-        # Sauvegarde locale aussi (pour l'API)
+        # Sauvegarde locale (pour l'API)
         os.makedirs('models', exist_ok=True)
         joblib.dump(model, "models/model.pkl")
 

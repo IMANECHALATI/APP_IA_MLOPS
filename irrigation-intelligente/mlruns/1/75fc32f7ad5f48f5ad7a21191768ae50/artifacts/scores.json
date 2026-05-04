@@ -1,0 +1,30 @@
+{
+    "accuracy": 0.8215,
+    "f1_score_weighted": 0.8079,
+    "weighted_avg_precision": 0.8213,
+    "weighted_avg_recall": 0.8215,
+    "confusion_matrix": [
+        [
+            15,
+            0,
+            52
+        ],
+        [
+            0,
+            1147,
+            26
+        ],
+        [
+            12,
+            267,
+            481
+        ]
+    ],
+    "classes": [
+        "High",
+        "Low",
+        "Medium"
+    ],
+    "n_test_samples": 2000,
+    "threshold_passed": true
+}

@@ -18,29 +18,23 @@ logger = logging.getLogger(__name__)
 # RÈGLES DE VALIDATION MÉTIER
 # ─────────────────────────────────────────────
 RANGE_RULES = {
-    "Soil_pH":              (0.0,  14.0),
-    "Soil_Moisture":        (0.0,  100.0),
+   
     "Humidity":             (0.0,  100.0),
-    "Sunlight_Hours":       (0.0,  24.0),
     "Temperature_C":        (-50.0, 60.0),
     "Rainfall_mm":          (0.0,  2000.0),
     "Wind_Speed_kmh":       (0.0,  300.0),
     "Field_Area_hectare":   (0.0,  100000.0),
-    "Organic_Carbon":       (0.0,  20.0),
-    "Electrical_Conductivity": (0.0, 20.0),
     "Previous_Irrigation_mm":  (0.0, 5000.0),
 }
 
 EXPECTED_COLUMNS = [
-    'Soil_Type', 'Soil_pH', 'Soil_Moisture', 'Organic_Carbon',
-    'Electrical_Conductivity', 'Temperature_C', 'Humidity', 'Rainfall_mm',
-    'Sunlight_Hours', 'Wind_Speed_kmh', 'Crop_Type', 'Crop_Growth_Stage',
-    'Season', 'Irrigation_Type', 'Water_Source', 'Field_Area_hectare',
+    'Temperature_C', 'Humidity', 'Rainfall_mm',
+    'Wind_Speed_kmh', 'Crop_Type', 'Crop_Growth_Stage',
+    'Season', 'Irrigation_Type', 'Field_Area_hectare',
     'Mulching_Used', 'Previous_Irrigation_mm', 'Region', 'Irrigation_Need'
 ]
 
 NUMERIC_COLS = [
-    'Soil_pH', 'Soil_Moisture', 'Organic_Carbon', 'Electrical_Conductivity',
     'Temperature_C', 'Humidity', 'Rainfall_mm', 'Sunlight_Hours',
     'Wind_Speed_kmh', 'Field_Area_hectare', 'Previous_Irrigation_mm'
 ]
@@ -58,16 +52,16 @@ def validate_data(config_path="params.yaml"):
         config = yaml.safe_load(f)
     file_path = config['data']['raw_path']
 
-    logger.info(f"📂 Validation du fichier : {file_path}")
+    logger.info(f" Validation du fichier : {file_path}")
 
     # ── CHECK 1 : existence du fichier ────────────────────
     if not os.path.exists(file_path):
-        logger.error(f"❌ Fichier introuvable : {file_path}")
+        logger.error(f" Fichier introuvable : {file_path}")
         sys.exit(1)
 
     df = pd.read_csv(file_path)
     df.columns = df.columns.str.strip()
-    logger.info(f"📊 Dataset chargé : {df.shape[0]} lignes × {df.shape[1]} colonnes")
+    logger.info(f"Dataset chargé : {df.shape[0]} lignes × {df.shape[1]} colonnes")
 
     # ── CHECK 2 : colonnes attendues ──────────────────────
     missing_cols = [c for c in EXPECTED_COLUMNS if c not in df.columns]
@@ -116,7 +110,7 @@ def validate_data(config_path="params.yaml"):
     # ── CHECK 7 : distribution de la cible ────────────────
     if 'Irrigation_Need' in df.columns:
         dist = df['Irrigation_Need'].value_counts(normalize=True) * 100
-        logger.info(f"📈 Distribution cible :\n{dist.round(2).to_string()}")
+        logger.info(f"Distribution cible :\n{dist.round(2).to_string()}")
         min_class_pct = dist.min()
         if min_class_pct < 5:
             warnings.append(
@@ -147,15 +141,15 @@ def validate_data(config_path="params.yaml"):
         json.dump(report, f, indent=4)
 
     for w in warnings:
-        logger.warning(f"⚠️  {w}")
+        logger.warning(f"  {w}")
 
     if errors:
         for e in errors:
-            logger.error(f"❌ {e}")
-        logger.error("🚫 Validation échouée. Pipeline arrêté.")
+            logger.error(f"{e}")
+        logger.error(" Validation échouée. Pipeline arrêté.")
         sys.exit(1)
 
-    logger.info(f"✅ Validation réussie — {len(warnings)} avertissement(s), 0 erreur.")
+    logger.info(f" Validation réussie — {len(warnings)} avertissement(s), 0 erreur.")
     return report
 
 
