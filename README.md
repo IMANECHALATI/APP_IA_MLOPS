@@ -221,7 +221,7 @@ git push → main
     ├── 5. Validate data
     ├── 6. Preprocess data
     ├── 7. Train model
-    ├── 8. Evaluate model ──── accuracy < 75% → ❌ BLOQUÉ
+    ├── 8. Evaluate model ──── accuracy < 75% →  BLOQUÉ
     ├── 9. Upload metrics artifact
     ├── 10. Build Docker image
     └── 11. Test API in Docker (/, /health, /predict)
