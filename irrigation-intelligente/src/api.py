@@ -40,15 +40,15 @@ try:
     model     = joblib.load("models/model.pkl")
     scaler    = joblib.load("models/scaler.pkl")
     target_le = joblib.load("models/target_encoder.pkl")
-    ohe       = joblib.load("models/onehot_encoder.pkl")  # ✅ OneHotEncoder
+    ohe       = joblib.load("models/onehot_encoder.pkl")  #  OneHotEncoder
 
-    logger.info("✅ Tous les artefacts ML chargés avec succès.")
+    logger.info("Tous les artefacts ML chargés avec succès.")
 
 except FileNotFoundError as e:
-    logger.error(f"❌ Artefact ML introuvable : {e}")
+    logger.error(f" Artefact ML introuvable : {e}")
     raise RuntimeError(f"Impossible de charger les artefacts ML : {e}")
 
-# ✅ Cohérent avec preprocess.py
+#  Cohérent avec preprocess.py
 CATEGORICAL_COLS = [
     'Crop_Type', 'Crop_Growth_Stage', 'Season',
     'Irrigation_Type', 'Mulching_Used', 'Region'
@@ -71,7 +71,7 @@ class IrrigationData(BaseModel):
     Wind_Speed_kmh:          float = Field(..., ge=0.0, json_schema_extra={"example": 15.0})
     Field_Area_hectare:      float = Field(..., gt=0.0, json_schema_extra={"example": 2.5})
     Previous_Irrigation_mm:  float = Field(..., ge=0.0, json_schema_extra={"example": 20.0})
-    Crop_Type:               str   = Field(..., json_schema_extra={"example": "Wheat"})      # ✅ ajouté
+    Crop_Type:               str   = Field(..., json_schema_extra={"example": "Wheat"})      
     Crop_Growth_Stage:       str   = Field(..., json_schema_extra={"example": "Vegetative"})
     Season:                  str   = Field(..., json_schema_extra={"example": "Summer"})
     Irrigation_Type:         str   = Field(..., json_schema_extra={"example": "Drip"})
@@ -92,7 +92,7 @@ class PredictionResponse(BaseModel):
 def home():
     return {
         "status": "online",
-        "message": "🌿 API d'irrigation intelligente en ligne",
+        "message": " API d'irrigation intelligente en ligne",
         "docs": "/docs",
         "version": "1.0.0"
     }
@@ -125,14 +125,14 @@ def model_info():
 def predict_irrigation(data: IrrigationData):
     prediction_counter["total"] += 1
     try:
-        # ✅ Pydantic V2
+        #  Pydantic V2
         input_dict = data.model_dump()
         input_df   = pd.DataFrame([input_dict])
 
         # A. Scaling numérique
         input_df[NUMERIC_COLS] = scaler.transform(input_df[NUMERIC_COLS])
 
-        # B. OneHotEncoding catégoriel ✅ cohérent avec preprocess.py
+        # B. OneHotEncoding catégoriel  cohérent avec preprocess.py
         cat_array        = ohe.transform(input_df[CATEGORICAL_COLS])
         cat_feature_names = ohe.get_feature_names_out(CATEGORICAL_COLS)
         cat_df           = pd.DataFrame(cat_array, columns=cat_feature_names)
@@ -152,7 +152,7 @@ def predict_irrigation(data: IrrigationData):
         prediction_label = target_le.inverse_transform([pred_code])[0]
 
         logger.info(
-            f"✅ Prédiction | Label: {prediction_label} | "
+            f" Prédiction | Label: {prediction_label} | "
             f"Confiance: {confidence:.2%} | Région: {data.Region}"
         )
 
@@ -168,7 +168,7 @@ def predict_irrigation(data: IrrigationData):
         raise
     except Exception as e:
         prediction_counter["errors"] += 1
-        logger.error(f"❌ Erreur de prédiction : {e}")
+        logger.error(f" Erreur de prédiction : {e}")
         raise HTTPException(status_code=500, detail=f"Erreur interne : {str(e)}")
 
 @app.get("/metrics", tags=["MLOps"])
